@@ -164,9 +164,6 @@ int delete_from_file(std::string* fname) {
         file_in.close();                                                                //Close first to make renaming possible
         temp_file.close();
 
-        //const char* c_filename = filename.c_str();
-        //const char* c_temp_file = temp_name.c_str();
-
         remove(filename.c_str());
         if (rename(temp_name.c_str(), filename.c_str()) != 0) {
             std::cout << "Uudelleen nimeäminen ei onnistunut!" << std::endl;
@@ -174,13 +171,118 @@ int delete_from_file(std::string* fname) {
         }
 
     }
-
     return retval;
 }
 
 int update_file(std::string* fname) {
-    std::cout << "Updating file" << std::endl;
-    return 0;
+    std::ifstream file_in;
+    std::ofstream file_out;
+    std::string name, filename_old = *fname, details, line, word, input;
+    std::string::size_type st;
+    std::string filename_new = "animals_temp.csv";
+    std::vector<std::string> csv_row;
+    int retval = 0, choice, found = 0;
+    char cont;
+
+    std::cout << "Kenen tietoja haluat päivittää?" << std::endl;
+    std::getline(std::cin, name);
+    
+    /*Open two files, the old or current "main" data file
+      and the new file which will contain the updated data*/
+    file_in.open(filename_old, std::fstream::in);
+    file_out.open(filename_new, std::fstream::out | std::fstream::app);
+
+    if (!file_out.is_open()) {
+        std::cout << "Alkuperäistä tiedostoa ei voitu avata!" << std::endl;
+        retval = -1;
+    }else if(!file_in.is_open()) {
+        std::cout << "Väliaikaista tiedostoa ei voitu avata!";
+        retval = 1;
+    }else {
+        while (std::getline(file_in, line)) {
+            csv_row.clear();
+            std::stringstream str_s(line);
+
+            while (std::getline(str_s, word, ',')) {
+                csv_row.push_back(word);
+            }
+            if (name != csv_row[0]) { //If the given name does not match the name of the animal in this current line, write it to the new file
+                file_out << line << '\n';
+            }
+            else {
+                found = 1;
+                std::cout << "********Eläimen nykyiset tiedot********" << std::endl;
+                std::cout << "Nimi: " << csv_row[0] << std::endl;
+                std::cout << "Syntymäaika: " << csv_row[1] << std::endl;
+                std::cout << "Laji: " << csv_row[2] << std::endl;
+                std::cout << "Väri: " << csv_row[3] << std::endl;
+                std::cout << "Sukupuoli: " << csv_row[4] << std::endl;
+                std::cout << "Status: " << csv_row[5] << std::endl;
+                do {
+                    std::cout << "Mitä haluat päivittää?" << std::endl;
+                    std::cout << "1. Nimi" << std::endl << "2. Syntymäaika" << std::endl <<
+                        "3. Laji" << std::endl << "4. Väri" << std::endl << "5. Sukupuoli" <<
+                        std::endl << "6. Status" << std::endl;
+
+                    std::cin >> choice;
+                    switch (choice) {
+                    case 1:
+                        std::cin.ignore();
+                        std::cout << "Anna uusi nimi: ";
+                        std::getline(std::cin, details);
+                        break;
+                    case 2:
+                        std::cin.ignore();
+                        std::cout << "Anna uusi syntymäaika: ";
+                        std::getline(std::cin, details);
+                        break;
+                    case 3:
+                        std::cin.ignore();
+                        std::cout << "Anna uusi laji: ";
+                        std::getline(std::cin, details);
+                        break;
+                    case 4:
+                        std::cin.ignore();
+                        std::cout << "Anna uusi väri: ";
+                        std::getline(std::cin, details);
+                        break;
+                    case 5:
+                        std::cin.ignore();
+                        std::cout << "Anna uusi sukupuoli: ";
+                        std::getline(std::cin, details);
+                        break;
+                    case 6:
+                        std::cin.ignore();
+                        std::cout << "Anna uusi status: ";
+                        std::getline(std::cin, details);
+                        break;
+                    }
+                    csv_row[choice - 1] = details;
+                    std::cout << "Päivitetäänkö lisää? (K/E)";
+                    cont = std::getchar();
+                } while (cont != 'E' && cont != 'e');
+
+                //Write the updated data to the new file
+                for (int i = 0; i < csv_row.size() - 1; i++) {
+                    file_out << csv_row[i] << ',';
+                }
+                file_out << csv_row[csv_row.size() - 1] << '\n';
+            }
+        }
+    }
+    if (found == 0){
+        std::cout << "Nimellä ei löytynyt yhtään eläintä!" << std::endl;
+    }
+    file_in.close();
+    file_out.close();
+
+    remove(filename_old.c_str()); //Remove the old copy of the file
+    if (rename(filename_new.c_str(), filename_old.c_str()) != 0) {  //Rename the newly made file with the name of the "old" file
+        std::cout << "Uudelleen nimeäminen ei onnistunut!";
+        retval = 3;
+    };
+    std::cin.ignore();
+    return retval;
 }
 
 int add_to_file(std::string* fname) {
